@@ -12,4 +12,7 @@ dependencies = [
     "python-whois>=0.9.5",
     "streamlit>=1.43.2",
     "trafilatura>=2.0.0",
+    [tool.poetry.dependencies]
+python = ">=3.12,<4"
+
 ]
