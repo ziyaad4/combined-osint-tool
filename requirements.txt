@@ -1,1 +1,8 @@
-poetry export -f requirements.txt --output requirements.txt --without-hashes
+
+streamlit 
+beautifulsoup4 
+dnspython pandas 
+pillow pypdf2
+python-whois 
+trafilatura
+poetry export -f requirements.txt --without-hashes > requirements.txt
