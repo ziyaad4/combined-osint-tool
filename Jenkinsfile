@@ -33,17 +33,14 @@ pipeline {
             }
         }
 
-        stage('Deploy to EC2') {
-            steps {
-                sshagent (credentials: ["$DEPLOY_KEY"]) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST << EOF
-                        docker pull $IMAGE_NAME
-                        docker stop osint-tool || true
-                        docker rm osint-tool || true
-                        docker run -d -p 8501:8501 --name osint-tool $IMAGE_NAME
-                        EOF
-                    """
+stage('Deploy to EC2') {
+    steps {
+        sshagent(['ec2-ssh-key']) {
+            sh 'ssh -o StrictHostKeyChecking=no ubuntu@<3.109.212.76> "docker pull your-image && docker run ..."'
+        }
+    }
+}
+
                 }
             }
         }
