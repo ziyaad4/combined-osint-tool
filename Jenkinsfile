@@ -2,11 +2,11 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'ziyaadsayyad/osint-tool'
-        DOCKER_CREDENTIALS_ID = 'dockerhub-creds'   // Set in Jenkins > Credentials
-        DEPLOY_USER = 'ubuntu'
-        DEPLOY_HOST = '3.109.212.76'
-        DEPLOY_KEY = 'ec2-ssh-key'  // Private key stored in Jenkins Credentials
+        IMAGE_NAME = "ziyaadsayyad/osint-tool"
+        DOCKERHUB_CREDS = "dockerhub-creds"
+        DEPLOY_USER = "ubuntu"
+        DEPLOY_HOST = "3.109.212.76"
+        DEPLOY_KEY = "ec2-ssh-key"
     }
 
     stages {
@@ -18,32 +18,31 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build(DOCKER_IMAGE)
-                }
+                sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS_ID) {
-                        docker.image(DOCKER_IMAGE).push('latest')
-                    }
+                withCredentials([usernamePassword(credentialsId: "$DOCKERHUB_CREDS", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh """
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push $IMAGE_NAME
+                    """
                 }
             }
         }
 
         stage('Deploy to EC2') {
             steps {
-                sshagent (credentials: [DEPLOY_KEY]) {
+                sshagent (credentials: ["$DEPLOY_KEY"]) {
                     sh """
-                    ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} << EOF
-                    docker pull ${DOCKER_IMAGE}
-                    docker stop osint-tool || true
-                    docker rm osint-tool || true
-                    docker run -d -p 8501:8501 --name osint-tool ${DOCKER_IMAGE}
-                    EOF
+                        ssh -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST << EOF
+                        docker pull $IMAGE_NAME
+                        docker stop osint-tool || true
+                        docker rm osint-tool || true
+                        docker run -d -p 8501:8501 --name osint-tool $IMAGE_NAME
+                        EOF
                     """
                 }
             }
